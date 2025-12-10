@@ -72,10 +72,15 @@ const cards = {
 const activeItem = ref(items[0]); // выбранная вкладка (клик)
 const displayItem = ref(items[0]); // отображаемая вкладка (ховер/клик)
 const displayCard = computed(() => cards[displayItem.value]);
+const activeIndex = computed(() => items.indexOf(activeItem.value));
 
 const hoveredIndex = ref<number | null>(null);
 const panelRaised = ref(false); // поднята ли панель поверх тумана
 const fogOpened = ref(false);
+const highlightedIndex = computed(() =>
+  hoveredIndex.value !== null ? hoveredIndex.value : activeIndex.value
+);
+const hoverTimer = ref<number | null>(null);
 
 const rightColRef = ref<HTMLElement | null>(null);
 const cardRef = ref<HTMLElement | null>(null);
@@ -88,16 +93,28 @@ const registerItemRef = (el: HTMLElement | null, idx: number) => {
 };
 
 const handleHover = (value: string, idx: number) => {
+  if (hoverTimer.value !== null) {
+    clearTimeout(hoverTimer.value);
+    hoverTimer.value = null;
+  }
   hoveredIndex.value = idx;
-  displayItem.value = value; // показываем сразу, но под туманом
   panelRaised.value = false;
   fogOpened.value = false;
-  nextTick(updateLines);
+  // задержка, чтобы исключить вспышку над туманом
+  hoverTimer.value = window.setTimeout(() => {
+    displayItem.value = value; // показываем под туманом после таймаута
+    hoverTimer.value = null;
+    nextTick(updateLines);
+  }, 300);
 };
 
 const handleSelect = (value: string, idx: number) => {
+  if (hoverTimer.value !== null) {
+    clearTimeout(hoverTimer.value);
+    hoverTimer.value = null;
+  }
   activeItem.value = value;
-  hoveredIndex.value = idx;
+  hoveredIndex.value = null;
   displayItem.value = value;
   panelRaised.value = true; // поднимаем над туманом
   fogOpened.value = true; // раскрываем туман
@@ -105,6 +122,10 @@ const handleSelect = (value: string, idx: number) => {
 };
 
 const handleLeave = () => {
+  if (hoverTimer.value !== null) {
+    clearTimeout(hoverTimer.value);
+    hoverTimer.value = null;
+  }
   hoveredIndex.value = null;
   displayItem.value = activeItem.value;
   fogOpened.value = panelRaised.value;
@@ -196,8 +217,8 @@ onBeforeUnmount(() => {
             :x2="line.x2"
             :y2="line.y2"
             stroke-linecap="round"
-            :stroke="hoveredIndex === idx || activeItem === items[idx] ? '#9ad7f4' : 'rgba(109,152,177,0.45)'"
-            :stroke-width="hoveredIndex === idx || activeItem === items[idx] ? 3 : 1.5"
+            :stroke="highlightedIndex === idx ? '#9ad7f4' : 'rgba(109,152,177,0.45)'"
+            :stroke-width="highlightedIndex === idx ? 3 : 1.5"
             class="transition-all duration-200"
           />
           <template v-for="(line, idx) in lines" :key="`beads-${idx}`">
@@ -206,8 +227,8 @@ onBeforeUnmount(() => {
               :key="`bead-${idx}-${step}`"
               :cx="line.x1 + (line.x2 - line.x1) * step"
               :cy="line.y1 + (line.y2 - line.y1) * step"
-              :r="hoveredIndex === idx || activeItem === items[idx] ? 5 : 3.5"
-              :fill="hoveredIndex === idx || activeItem === items[idx] ? '#b9e6ff' : 'rgba(154,215,244,0.65)'"
+              :r="highlightedIndex === idx ? 5 : 3.5"
+              :fill="highlightedIndex === idx ? '#b9e6ff' : 'rgba(154,215,244,0.65)'"
               class="transition-all duration-200 drop-shadow-sm"
             />
           </template>
@@ -231,7 +252,7 @@ onBeforeUnmount(() => {
             :ref="(el) => registerItemRef(el as HTMLElement | null, idx)"
             class="flex h-[70px] w-[70px] items-center justify-center transform transition-transform duration-200 group-hover:scale-110"
           >
-            <NeuronView :highlight="hoveredIndex === idx || activeItem === value" />
+            <NeuronView :highlight="highlightedIndex === idx" />
           </div>
 
           <p
