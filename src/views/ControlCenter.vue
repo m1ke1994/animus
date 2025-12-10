@@ -73,6 +73,7 @@ const activeItem = ref(items[0]);
 const activeCard = computed(() => cards[activeItem.value]);
 const hoveredIndex = ref<number | null>(null);
 const panelAnimKey = ref(0);
+const panelRaised = ref(false);
 const rightColRef = ref<HTMLElement | null>(null);
 const cardRef = ref<HTMLElement | null>(null);
 const itemRefs = ref<(HTMLElement | null)[]>([]);
@@ -87,6 +88,12 @@ const handleSelect = (value: string, idx: number) => {
   activeItem.value = value;
   hoveredIndex.value = idx;
   panelAnimKey.value += 1;
+  panelRaised.value = true;
+  nextTick(updateLines);
+};
+
+const handleHover = (idx: number) => {
+  hoveredIndex.value = idx;
   nextTick(updateLines);
 };
 
@@ -126,11 +133,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="control_center flex h-full justify-between items-center">
-    <div class="relative z-0 w-[40%] h-[100%] flex items-center justify-center overflow-visible">
+    <div
+      class="relative z-0 w-[40%] h-[100%] flex items-center justify-center overflow-visible transition-all duration-500"
+      :class="{ 'panel-raise': panelRaised }"
+    >
       <Transition name="panel-slide" mode="out-in">
         <div
           :key="panelAnimKey"
-          class="w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
+          class="panel-surface w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
         >
           <h2 class="mb-4 text-3xl font-extrabold tracking-wide text-white">
             {{ activeCard.title }}
@@ -201,7 +211,8 @@ onBeforeUnmount(() => {
           v-for="(value, idx) in items"
           :key="value"
           class="group grid cursor-pointer w-full grid-cols-[70px,auto] items-center gap-4"
-          @mouseenter="handleSelect(value, idx)"
+          @mouseenter="handleHover(idx)"
+          @mouseleave="() => { hoveredIndex = null }"
           @click="handleSelect(value, idx)"
         >
           <div
@@ -225,16 +236,20 @@ onBeforeUnmount(() => {
 <style scoped>
 .panel-slide-enter-active,
 .panel-slide-leave-active {
-  transition: all 350ms ease, opacity 350ms ease, filter 350ms ease;
+  transition:
+    transform 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 650ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 650ms ease;
 }
 .panel-slide-enter-from {
   opacity: 0;
-  transform: translateX(-60px);
-  filter: blur(6px);
+  transform: translateX(-80px) scale(0.92) rotateY(10deg);
+  filter: blur(10px);
 }
 .panel-slide-enter-to {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateX(0) scale(1) rotateY(0deg);
   filter: blur(0);
 }
 .panel-slide-leave-from {
@@ -244,7 +259,38 @@ onBeforeUnmount(() => {
 }
 .panel-slide-leave-to {
   opacity: 0;
-  transform: translateX(60px);
-  filter: blur(6px);
+  transform: translateX(60px) scale(0.96) rotateY(-6deg);
+  filter: blur(8px);
+}
+
+.panel-raise {
+  z-index: 30;
+  filter: drop-shadow(0 14px 32px rgba(10, 20, 30, 0.6));
+}
+
+.panel-surface {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 10px 30px rgba(5, 12, 20, 0.45),
+    inset 0 0 20px rgba(148, 204, 240, 0.15);
+}
+
+.panel-surface::after {
+  content: "";
+  position: absolute;
+  inset: -20% -10%;
+  background: radial-gradient(circle at 30% 30%, rgba(140, 207, 255, 0.18), transparent 45%),
+    radial-gradient(circle at 70% 10%, rgba(70, 140, 200, 0.2), transparent 50%),
+    linear-gradient(120deg, rgba(138, 199, 236, 0.08), rgba(34, 65, 98, 0));
+  opacity: 0;
+  transform: translateY(10%);
+  transition: opacity 500ms ease, transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.panel-raise .panel-surface::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 </style>
