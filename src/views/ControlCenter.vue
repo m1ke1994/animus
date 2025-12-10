@@ -69,11 +69,14 @@ const cards = {
   },
 };
 
-const activeItem = ref(items[0]);
-const activeCard = computed(() => cards[activeItem.value]);
+const activeItem = ref(items[0]); // выбранная вкладка (клик)
+const displayItem = ref(items[0]); // отображаемая вкладка (ховер/клик)
+const displayCard = computed(() => cards[displayItem.value]);
+
 const hoveredIndex = ref<number | null>(null);
-const panelAnimKey = ref(0);
-const panelRaised = ref(false);
+const panelRaised = ref(false); // поднята ли панель поверх тумана
+const fogOpened = ref(false);
+
 const rightColRef = ref<HTMLElement | null>(null);
 const cardRef = ref<HTMLElement | null>(null);
 const itemRefs = ref<(HTMLElement | null)[]>([]);
@@ -84,18 +87,27 @@ const registerItemRef = (el: HTMLElement | null, idx: number) => {
   itemRefs.value[idx] = el;
 };
 
-const handleSelect = (value: string, idx: number) => {
-  activeItem.value = value;
+const handleHover = (value: string, idx: number) => {
   hoveredIndex.value = idx;
-  panelAnimKey.value += 1;
-  panelRaised.value = true;
+  displayItem.value = value; // показываем сразу, но под туманом
+  panelRaised.value = false;
+  fogOpened.value = false;
   nextTick(updateLines);
 };
 
-const handleHover = (value: string, idx: number) => {
+const handleSelect = (value: string, idx: number) => {
   activeItem.value = value;
   hoveredIndex.value = idx;
-  panelRaised.value = false;
+  displayItem.value = value;
+  panelRaised.value = true; // поднимаем над туманом
+  fogOpened.value = true; // раскрываем туман
+  nextTick(updateLines);
+};
+
+const handleLeave = () => {
+  hoveredIndex.value = null;
+  displayItem.value = activeItem.value;
+  fogOpened.value = panelRaised.value;
   nextTick(updateLines);
 };
 
@@ -139,37 +151,35 @@ onBeforeUnmount(() => {
       class="relative z-0 w-[40%] h-[100%] flex items-center justify-center overflow-visible transition-all duration-500"
       :class="{ 'panel-raise': panelRaised }"
     >
-      <Transition name="panel-slide" mode="out-in">
-        <div
-          :key="panelAnimKey"
-          class="panel-surface w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
-        >
-          <h2 class="mb-4 text-3xl font-extrabold tracking-wide text-white">
-            {{ activeCard.title }}
-          </h2>
+      <div class="fog-layer pointer-events-none" :class="{ 'fog-clear': fogOpened }"></div>
+      <div
+        class="panel-surface w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
+      >
+        <h2 class="mb-4 text-3xl font-extrabold tracking-wide text-white">
+          {{ displayCard.title }}
+        </h2>
 
-          <p class="mb-6 text-sm leading-relaxed text-[#6F8A9C]">
-            {{ activeCard.description }}
-          </p>
+        <p class="mb-6 text-sm leading-relaxed text-[#6F8A9C]">
+          {{ displayCard.description }}
+        </p>
 
-          <div class="mb-6 space-y-1">
-            <div v-for="metric in activeCard.metrics" :key="metric.label" class="flex justify-between text-xs">
-              <span class="text-[#6F8A9C]">{{ metric.label }}</span>
-              <span class="text-white/90">{{ metric.value }}</span>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-3">
-            <button
-              v-for="action in activeCard.actions"
-              :key="action"
-              class="rounded-full border border-[#29506A] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#9EC4E3] transition hover:bg-[#193144]"
-            >
-              {{ action }}
-            </button>
+        <div class="mb-6 space-y-1">
+          <div v-for="metric in displayCard.metrics" :key="metric.label" class="flex justify-between text-xs">
+            <span class="text-[#6F8A9C]">{{ metric.label }}</span>
+            <span class="text-white/90">{{ metric.value }}</span>
           </div>
         </div>
-      </Transition>
+
+        <div class="flex flex-wrap gap-3">
+          <button
+            v-for="action in displayCard.actions"
+            :key="action"
+            class="rounded-full border border-[#29506A] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#9EC4E3] transition hover:bg-[#193144]"
+          >
+            {{ action }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div
@@ -186,8 +196,8 @@ onBeforeUnmount(() => {
             :x2="line.x2"
             :y2="line.y2"
             stroke-linecap="round"
-            :stroke="hoveredIndex === idx ? '#9ad7f4' : 'rgba(109,152,177,0.45)'"
-            :stroke-width="hoveredIndex === idx ? 3 : 1.5"
+            :stroke="hoveredIndex === idx || activeItem === items[idx] ? '#9ad7f4' : 'rgba(109,152,177,0.45)'"
+            :stroke-width="hoveredIndex === idx || activeItem === items[idx] ? 3 : 1.5"
             class="transition-all duration-200"
           />
           <template v-for="(line, idx) in lines" :key="`beads-${idx}`">
@@ -196,8 +206,8 @@ onBeforeUnmount(() => {
               :key="`bead-${idx}-${step}`"
               :cx="line.x1 + (line.x2 - line.x1) * step"
               :cy="line.y1 + (line.y2 - line.y1) * step"
-              :r="hoveredIndex === idx ? 5 : 3.5"
-              :fill="hoveredIndex === idx ? '#b9e6ff' : 'rgba(154,215,244,0.65)'"
+              :r="hoveredIndex === idx || activeItem === items[idx] ? 5 : 3.5"
+              :fill="hoveredIndex === idx || activeItem === items[idx] ? '#b9e6ff' : 'rgba(154,215,244,0.65)'"
               class="transition-all duration-200 drop-shadow-sm"
             />
           </template>
@@ -214,7 +224,7 @@ onBeforeUnmount(() => {
           :key="value"
           class="group grid cursor-pointer w-full grid-cols-[70px,auto] items-center gap-4"
           @mouseenter="handleHover(value, idx)"
-          @mouseleave="() => { hoveredIndex = null }"
+          @mouseleave="handleLeave"
           @click="handleSelect(value, idx)"
         >
           <div
@@ -236,38 +246,23 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.panel-slide-enter-active,
-.panel-slide-leave-active {
-  transition:
-    transform 950ms cubic-bezier(0.16, 1, 0.3, 1.1),
-    opacity 950ms cubic-bezier(0.16, 1, 0.3, 1.1),
-    filter 950ms cubic-bezier(0.16, 1, 0.3, 1.1),
-    box-shadow 950ms ease;
-}
-.panel-slide-enter-from {
-  opacity: 0;
-  transform: translateX(-40px) translateY(10px) scale(0.08) rotateY(18deg) skewX(-8deg);
-  filter: blur(16px);
-}
-.panel-slide-enter-to {
-  opacity: 1;
-  transform: translateX(0) translateY(0) scale(1) rotateY(0deg) skewX(0deg);
-  filter: blur(0);
-}
-.panel-slide-leave-from {
-  opacity: 1;
-  transform: translateX(0);
-  filter: blur(0);
-}
-.panel-slide-leave-to {
-  opacity: 0;
-  transform: translateX(80px) translateY(-20px) scale(0.94) rotateY(-10deg);
-  filter: blur(10px);
-}
-
 .panel-raise {
   z-index: 30;
   filter: drop-shadow(0 14px 32px rgba(10, 20, 30, 0.6));
+}
+
+.fog-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(14, 26, 38, 0.4), rgba(5, 14, 22, 0.7));
+  backdrop-filter: blur(8px);
+  opacity: 1;
+  transition: opacity 500ms ease, backdrop-filter 500ms ease;
+}
+
+.fog-clear {
+  opacity: 0;
+  backdrop-filter: blur(0px);
 }
 
 .panel-surface {
