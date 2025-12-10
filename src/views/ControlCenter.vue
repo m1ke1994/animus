@@ -3,14 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import ControlCenterCard from "../components/ControlCenterCard.vue";
 import NeuronView from "../components/NeuronView.vue";
 
-const items = [
-  "Аналитика",
-  "Пайплайны",
-  "Память",
-  "Симуляции",
-  "Политики",
-  "Сенсоры",
-];
+const items = ["Аналитика", "Пайплайны", "Память", "Симуляции", "Политики", "Сенсоры"];
 
 const cards = {
   Аналитика: {
@@ -28,8 +21,7 @@ const cards = {
   },
   Пайплайны: {
     title: "Пайплайны",
-    description:
-      "Ingest, normalize, label. Проверяем задержки и стабильность, подсвечиваем узкие места и точки ретраев.",
+    description: "Ingest, normalize, label. Проверяем задержки и стабильность, подсвечиваем узкие места и ретраи.",
     metrics: [
       { label: "Активные пайплайны", value: "—" },
       { label: "Скорость приёма", value: "—" },
@@ -38,8 +30,7 @@ const cards = {
   },
   Память: {
     title: "Память",
-    description:
-      "Coverage сигналов и remediation. Следим за полнотой данных и точками восстановления.",
+    description: "Coverage сигналов и remediation. Следим за полнотой данных и точками восстановления.",
     metrics: [
       { label: "Доступность", value: "—" },
       { label: "min_count", value: "—" },
@@ -48,8 +39,7 @@ const cards = {
   },
   Симуляции: {
     title: "Симуляции",
-    description:
-      "Стенды what-if и sandbox. Запускаем сценарии и проверяем устойчивость изменений.",
+    description: "Стенды what-if и sandbox. Запускаем сценарии и проверяем устойчивость изменений.",
     metrics: [
       { label: "Активные симуляции", value: "0" },
       { label: "Очередь сценариев", value: "0" },
@@ -58,8 +48,7 @@ const cards = {
   },
   Политики: {
     title: "Политики",
-    description:
-      "Политики SLO/PII/License и стабильность ретраев. Контролируем соответствие и оповещения.",
+    description: "Политики SLO/PII/License и стабильность ретраев. Контролируем соответствие и оповещения.",
     metrics: [
       { label: "Lag", value: "—" },
       { label: "Нарушения", value: "0" },
@@ -70,8 +59,7 @@ const cards = {
   },
   Сенсоры: {
     title: "Сенсоры",
-    description:
-      "Состояние MinIO, Postgres и прочих хранилищ. Отслеживаем health-checks и реакцию на сбои.",
+    description: "Состояние MinIO, Postgres и прочих хранилищ. Отслеживаем health-checks и реакцию на сбои.",
     metrics: [
       { label: "Outbox lag", value: "<1s" },
       { label: "Ошибки", value: "—" },
@@ -83,8 +71,8 @@ const cards = {
 
 const activeItem = ref(items[0]);
 const activeCard = computed(() => cards[activeItem.value]);
-
 const hoveredIndex = ref<number | null>(null);
+const panelAnimKey = ref(0);
 const rightColRef = ref<HTMLElement | null>(null);
 const cardRef = ref<HTMLElement | null>(null);
 const itemRefs = ref<(HTMLElement | null)[]>([]);
@@ -93,6 +81,13 @@ const beadSteps = [0.25, 0.5, 0.75];
 
 const registerItemRef = (el: HTMLElement | null, idx: number) => {
   itemRefs.value[idx] = el;
+};
+
+const handleSelect = (value: string, idx: number) => {
+  activeItem.value = value;
+  hoveredIndex.value = idx;
+  panelAnimKey.value += 1;
+  nextTick(updateLines);
 };
 
 const updateLines = () => {
@@ -131,39 +126,38 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="control_center flex h-full justify-between items-center">
-    <div class="relative z-0 w-[40%] h-[100%] flex items-center justify-center">
-      <div
-        class="w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
-      >
-        <h2 class="mb-4 text-3xl font-extrabold tracking-wide text-white">
-          {{ activeCard.title }}
-        </h2>
+    <div class="relative z-0 w-[40%] h-[100%] flex items-center justify-center overflow-visible">
+      <Transition name="panel-slide" mode="out-in">
+        <div
+          :key="panelAnimKey"
+          class="w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
+        >
+          <h2 class="mb-4 text-3xl font-extrabold tracking-wide text-white">
+            {{ activeCard.title }}
+          </h2>
 
-        <p class="mb-6 text-sm leading-relaxed text-[#6F8A9C]">
-          {{ activeCard.description }}
-        </p>
+          <p class="mb-6 text-sm leading-relaxed text-[#6F8A9C]">
+            {{ activeCard.description }}
+          </p>
 
-        <div class="mb-6 space-y-1">
-          <div
-            v-for="metric in activeCard.metrics"
-            :key="metric.label"
-            class="flex justify-between text-xs"
-          >
-            <span class="text-[#6F8A9C]">{{ metric.label }}</span>
-            <span class="text-white/90">{{ metric.value }}</span>
+          <div class="mb-6 space-y-1">
+            <div v-for="metric in activeCard.metrics" :key="metric.label" class="flex justify-between text-xs">
+              <span class="text-[#6F8A9C]">{{ metric.label }}</span>
+              <span class="text-white/90">{{ metric.value }}</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <button
+              v-for="action in activeCard.actions"
+              :key="action"
+              class="rounded-full border border-[#29506A] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#9EC4E3] transition hover:bg-[#193144]"
+            >
+              {{ action }}
+            </button>
           </div>
         </div>
-
-        <div class="flex flex-wrap gap-3">
-          <button
-            v-for="action in activeCard.actions"
-            :key="action"
-            class="rounded-full border border-[#29506A] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#9EC4E3] transition hover:bg-[#193144]"
-          >
-            {{ action }}
-          </button>
-        </div>
-      </div>
+      </Transition>
     </div>
 
     <div
@@ -207,8 +201,8 @@ onBeforeUnmount(() => {
           v-for="(value, idx) in items"
           :key="value"
           class="group grid cursor-pointer w-full grid-cols-[70px,auto] items-center gap-4"
-          @mouseenter="() => { activeItem = value; hoveredIndex = idx; nextTick(updateLines); }"
-          @mouseleave="() => { hoveredIndex = null; }"
+          @mouseenter="handleSelect(value, idx)"
+          @click="handleSelect(value, idx)"
         >
           <div
             :ref="(el) => registerItemRef(el as HTMLElement | null, idx)"
@@ -229,4 +223,28 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.panel-slide-enter-active,
+.panel-slide-leave-active {
+  transition: all 350ms ease, opacity 350ms ease, filter 350ms ease;
+}
+.panel-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-60px);
+  filter: blur(6px);
+}
+.panel-slide-enter-to {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+.panel-slide-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+.panel-slide-leave-to {
+  opacity: 0;
+  transform: translateX(60px);
+  filter: blur(6px);
+}
 </style>
