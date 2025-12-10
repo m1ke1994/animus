@@ -239,19 +239,19 @@ onBeforeUnmount(() => {
 .panel-slide-enter-active,
 .panel-slide-leave-active {
   transition:
-    transform 650ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 650ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 650ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 650ms ease;
+    transform 900ms cubic-bezier(0.2, 0.9, 0.2, 1.05),
+    opacity 900ms cubic-bezier(0.2, 0.9, 0.2, 1.05),
+    filter 900ms cubic-bezier(0.2, 0.9, 0.2, 1.05),
+    box-shadow 900ms ease;
 }
 .panel-slide-enter-from {
   opacity: 0;
-  transform: translateX(-80px) scale(0.92) rotateY(10deg);
-  filter: blur(10px);
+  transform: translateX(-120px) translateY(20px) scale(0.9) rotateY(16deg) skewX(-6deg);
+  filter: blur(14px);
 }
 .panel-slide-enter-to {
   opacity: 1;
-  transform: translateX(0) scale(1) rotateY(0deg);
+  transform: translateX(0) translateY(0) scale(1) rotateY(0deg) skewX(0deg);
   filter: blur(0);
 }
 .panel-slide-leave-from {
@@ -261,8 +261,8 @@ onBeforeUnmount(() => {
 }
 .panel-slide-leave-to {
   opacity: 0;
-  transform: translateX(60px) scale(0.96) rotateY(-6deg);
-  filter: blur(8px);
+  transform: translateX(80px) translateY(-20px) scale(0.94) rotateY(-10deg);
+  filter: blur(10px);
 }
 
 .panel-raise {
@@ -296,9 +296,27 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.panel-surface::before {
+  content: "";
+  position: absolute;
+  inset: -30% -30%;
+  background: linear-gradient(115deg, rgba(180, 240, 255, 0.25), rgba(100, 180, 230, 0) 40%);
+  opacity: 0;
+  transform: translateX(-30%) skewX(-10deg);
+  filter: blur(18px);
+  transition: opacity 600ms ease, transform 900ms cubic-bezier(0.2, 0.9, 0.2, 1.05);
+  pointer-events: none;
+}
+
 .panel-raise .panel-surface::after {
   opacity: 1;
   transform: translateY(0);
+}
+
+.panel-raise .panel-surface::before {
+  opacity: 1;
+  transform: translateX(20%) skewX(0deg);
+  animation: sweep 1300ms cubic-bezier(0.2, 0.9, 0.2, 1.05) forwards;
 }
 
 .panel-raise .panel-surface {
@@ -308,5 +326,20 @@ onBeforeUnmount(() => {
     inset 0 0 26px rgba(148, 204, 240, 0.22);
   border-color: rgba(124, 180, 220, 0.45);
   background: rgba(5, 14, 22, 0.92);
+}
+
+@keyframes sweep {
+  0% {
+    opacity: 0.9;
+    transform: translateX(-40%) skewX(-12deg);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateX(10%) skewX(-4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(60%) skewX(0deg);
+  }
 }
 </style>
