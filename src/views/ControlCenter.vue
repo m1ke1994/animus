@@ -89,7 +89,7 @@ const activeCard = computed(() => cards[activeItem.value]);
 <template>
   <div class="control_center flex h-full justify-between items-center">
     <!-- ЛЕВАЯ КОЛОНКА: динамическая карточка -->
-    <div class="w-[40%] h-[100%] flex items-center justify-center">
+    <div class="relative z-0 w-[40%] h-[100%] flex items-center justify-center">
       <div
         class="w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
       >
@@ -127,29 +127,29 @@ const activeCard = computed(() => cards[activeItem.value]);
     <!-- ПРАВАЯ КОЛОНКА: ControlCenterCard + список нейронов -->
    <!-- ПРАВАЯ КОЛОНКА: ControlCenterCard + список нейронов -->
 <div
-  class="w-[40%] h-full flex flex-col items-center justify-center gap-8"
+  class="relative z-20 w-[40%] h-full flex flex-col items-center justify-start gap-8"
 >
-  <!-- ControlCenterCard сверху по центру -->
-  <div class="flex justify-center">
+  <!-- ControlCenterCard сверху, выравнен по левому краю списка -->
+  <div class="w-full max-w-[280px] flex justify-center">
     <ControlCenterCard />
   </div>
 
   <!-- меню с нейронами строго под ним и по центру -->
-  <div class="flex flex-col items-center w-full gap-4">
+  <div class="flex flex-col items-start w-full max-w-[280px] gap-4">
     <div
       v-for="value in items"
       :key="value"
-      class="group flex cursor-pointer items-center gap-4"
+      class="group grid cursor-pointer w-full grid-cols-[70px,auto] items-center gap-4"
       @mouseenter="activeItem = value"
     >
       <div
-        class="w-[70px] transform transition-transform duration-200 group-hover:scale-110"
+        class="flex h-[70px] w-[70px] items-center justify-center transform transition-transform duration-200 group-hover:scale-110"
       >
         <NeuronView />
       </div>
 
       <p
-        class="transform origin-left text-lg font-bold text-[#23313b] transition-all duration-200 group-hover:scale-110 group-hover:text-[#284355]"
+        class="transform origin-left text-lg font-bold leading-tight text-[#23313b] transition-all duration-200 group-hover:scale-110 group-hover:text-[#284355]"
       >
         {{ value }}
       </p>

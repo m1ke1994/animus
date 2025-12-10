@@ -7,11 +7,11 @@ import { RouterView } from 'vue-router'
 <template>
   <div class="relative min-h-screen text-white overflow-hidden w-full">
     <!-- 3D фон: фиксирован на весь экран -->
-    <DNABackground class="fixed inset-0 -z-10" />
+    <DNABackground class="fixed inset-0 z-10 pointer-events-none" />
 
     <!-- Контентный слой -->
     <div
-      class="relative z-10 min-h-screen flex flex-col
+      class="relative min-h-screen flex flex-col
              pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
     >
       <main
