@@ -221,7 +221,7 @@ onBeforeUnmount(() => {
             :ref="(el) => registerItemRef(el as HTMLElement | null, idx)"
             class="flex h-[70px] w-[70px] items-center justify-center transform transition-transform duration-200 group-hover:scale-110"
           >
-            <NeuronView />
+            <NeuronView :highlight="hoveredIndex === idx || activeItem === value" />
           </div>
 
           <p
@@ -239,15 +239,15 @@ onBeforeUnmount(() => {
 .panel-slide-enter-active,
 .panel-slide-leave-active {
   transition:
-    transform 900ms cubic-bezier(0.2, 0.9, 0.2, 1.05),
-    opacity 900ms cubic-bezier(0.2, 0.9, 0.2, 1.05),
-    filter 900ms cubic-bezier(0.2, 0.9, 0.2, 1.05),
-    box-shadow 900ms ease;
+    transform 950ms cubic-bezier(0.16, 1, 0.3, 1.1),
+    opacity 950ms cubic-bezier(0.16, 1, 0.3, 1.1),
+    filter 950ms cubic-bezier(0.16, 1, 0.3, 1.1),
+    box-shadow 950ms ease;
 }
 .panel-slide-enter-from {
   opacity: 0;
-  transform: translateX(-120px) translateY(20px) scale(0.9) rotateY(16deg) skewX(-6deg);
-  filter: blur(14px);
+  transform: translateX(-40px) translateY(10px) scale(0.08) rotateY(18deg) skewX(-8deg);
+  filter: blur(16px);
 }
 .panel-slide-enter-to {
   opacity: 1;
