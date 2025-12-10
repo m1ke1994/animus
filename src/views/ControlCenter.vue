@@ -92,8 +92,10 @@ const handleSelect = (value: string, idx: number) => {
   nextTick(updateLines);
 };
 
-const handleHover = (idx: number) => {
+const handleHover = (value: string, idx: number) => {
+  activeItem.value = value;
   hoveredIndex.value = idx;
+  panelRaised.value = false;
   nextTick(updateLines);
 };
 
@@ -211,7 +213,7 @@ onBeforeUnmount(() => {
           v-for="(value, idx) in items"
           :key="value"
           class="group grid cursor-pointer w-full grid-cols-[70px,auto] items-center gap-4"
-          @mouseenter="handleHover(idx)"
+          @mouseenter="handleHover(value, idx)"
           @mouseleave="() => { hoveredIndex = null }"
           @click="handleSelect(value, idx)"
         >
@@ -274,6 +276,11 @@ onBeforeUnmount(() => {
   box-shadow:
     0 10px 30px rgba(5, 12, 20, 0.45),
     inset 0 0 20px rgba(148, 204, 240, 0.15);
+  transition:
+    transform 450ms cubic-bezier(0.19, 1, 0.22, 1),
+    box-shadow 450ms ease,
+    border-color 450ms ease,
+    background-color 450ms ease;
 }
 
 .panel-surface::after {
@@ -292,5 +299,14 @@ onBeforeUnmount(() => {
 .panel-raise .panel-surface::after {
   opacity: 1;
   transform: translateY(0);
+}
+
+.panel-raise .panel-surface {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 14px 38px rgba(5, 12, 20, 0.6),
+    inset 0 0 26px rgba(148, 204, 240, 0.22);
+  border-color: rgba(124, 180, 220, 0.45);
+  background: rgba(5, 14, 22, 0.92);
 }
 </style>
