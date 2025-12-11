@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed } from "vue"
 
 const range = ref<"1h" | "24h" | "7d">("1h")

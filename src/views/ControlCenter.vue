@@ -1,81 +1,77 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import ControlCenterCard from "../components/ControlCenterCard.vue";
 import NeuronView from "../components/NeuronView.vue";
 
 const items = ["Аналитика", "Пайплайны", "Память", "Симуляции", "Политики", "Сенсоры"];
+const routePaths = ["/analytics", "/pipelines", "/memory", "/simulations", "/policies", "/sensors"];
+const router = useRouter();
 
 const cards = {
   Аналитика: {
     title: "Аналитика",
-    description:
-      "Бэклог outbox и DLQ в реальном времени. Следим за лагом, SLA и ретраями, чтобы цепочки ADL оставались устойчивыми.",
+    description: "Обзор дашбордов, метрик и ключевых показателей системы.",
     metrics: [
-      { label: "Готовые события", value: "0" },
-      { label: "Плановые", value: "0" },
+      { label: "Активных отчётов", value: "12" },
+      { label: "Обновления", value: "real-time" },
       { label: "SLO", value: "OK" },
-      { label: "DLQ backlog", value: "—" },
-      { label: "Ops SLO", value: "—" },
     ],
-    actions: ["OUTBOX", "DLQ"],
+    actions: ["Открыть", "Экспорт"],
   },
   Пайплайны: {
     title: "Пайплайны",
-    description: "Ingest, normalize, label. Проверяем задержки и стабильность, подсвечиваем узкие места и ретраи.",
+    description: "Загрузка, нормализация и оркестрация потоков данных.",
     metrics: [
-      { label: "Активные пайплайны", value: "—" },
-      { label: "Скорость приёма", value: "—" },
+      { label: "Запущено", value: "5" },
+      { label: "Ошибок", value: "0" },
     ],
-    actions: ["Профиль", "Запуски"],
+    actions: ["Запустить", "Конфигурация"],
   },
   Память: {
     title: "Память",
-    description: "Coverage сигналов и remediation. Следим за полнотой данных и точками восстановления.",
+    description: "Хранилища, кеши и объём доступных ресурсов.",
     metrics: [
-      { label: "Доступность", value: "—" },
-      { label: "min_count", value: "—" },
+      { label: "Занято", value: "62%" },
+      { label: "Свободно", value: "38%" },
     ],
-    actions: ["Просмотр", "История"],
+    actions: ["Детали", "Очистить"],
   },
   Симуляции: {
     title: "Симуляции",
-    description: "Стенды what-if и sandbox. Запускаем сценарии и проверяем устойчивость изменений.",
+    description: "What-if сценарии и тестовые прогонки в песочнице.",
     metrics: [
-      { label: "Активные симуляции", value: "0" },
-      { label: "Очередь сценариев", value: "0" },
+      { label: "Запусков сегодня", value: "3" },
+      { label: "Успешность", value: "100%" },
     ],
-    actions: ["Новый запуск"],
+    actions: ["Запустить", "История"],
   },
   Политики: {
     title: "Политики",
-    description: "Политики SLO/PII/License и стабильность ретраев. Контролируем соответствие и оповещения.",
+    description: "Правила доступа, качества данных и комплаенса.",
     metrics: [
-      { label: "Lag", value: "—" },
-      { label: "Нарушения", value: "0" },
-      { label: "Ops", value: "0" },
-      { label: "Ops SLO", value: "—" },
+      { label: "Активных правил", value: "18" },
+      { label: "Нарушений", value: "0" },
     ],
-    actions: ["Настройка", "OUTBOX"],
+    actions: ["Просмотреть", "Редактировать"],
   },
   Сенсоры: {
     title: "Сенсоры",
-    description: "Состояние MinIO, Postgres и прочих хранилищ. Отслеживаем health-checks и реакцию на сбои.",
+    description: "Мониторинг сервисов, датчиков и алертинга.",
     metrics: [
-      { label: "Outbox lag", value: "<1s" },
-      { label: "Ошибки", value: "—" },
-      { label: "In-flight ops", value: "0" },
+      { label: "Онлайн", value: "24" },
+      { label: "Аварий", value: "0" },
     ],
-    actions: ["SMOKE TEST", "OBSERVABILITY", "OUTBOX"],
+    actions: ["Дашборд", "Логи"],
   },
 };
-
-const activeItem = ref(items[0]); // выбранная вкладка (клик)
-const displayItem = ref(items[0]); // отображаемая вкладка (ховер/клик)
+const activeItem = ref(items[0]); // текущее выбранное значение (клик)
+const displayItem = ref(items[0]); // показываемое значение (ховер/клик)
 const displayCard = computed(() => cards[displayItem.value]);
 const activeIndex = computed(() => items.indexOf(activeItem.value));
 
 const hoveredIndex = ref<number | null>(null);
-const panelRaised = ref(false); // поднята ли панель поверх тумана
+const panelRaised = ref(false); // поднимаем панель при клике
 const fogOpened = ref(false);
 const highlightedIndex = computed(() =>
   hoveredIndex.value !== null ? hoveredIndex.value : activeIndex.value
@@ -100,9 +96,9 @@ const handleHover = (value: string, idx: number) => {
   hoveredIndex.value = idx;
   panelRaised.value = false;
   fogOpened.value = false;
-  // задержка, чтобы исключить вспышку над туманом
+  // небольшая задержка перед показом карточки
   hoverTimer.value = window.setTimeout(() => {
-    displayItem.value = value; // показываем под туманом после таймаута
+    displayItem.value = value;
     hoverTimer.value = null;
     nextTick(updateLines);
   }, 300);
@@ -116,8 +112,12 @@ const handleSelect = (value: string, idx: number) => {
   activeItem.value = value;
   hoveredIndex.value = null;
   displayItem.value = value;
-  panelRaised.value = true; // поднимаем над туманом
-  fogOpened.value = true; // раскрываем туман
+  panelRaised.value = true; // поднимаем панель
+  fogOpened.value = true; // убираем туман
+  const targetPath = routePaths[idx];
+  if (targetPath) {
+    void router.push(targetPath);
+  }
   nextTick(updateLines);
 };
 
@@ -167,15 +167,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="control_center flex h-full justify-between items-center">
+  <div class="control_center flex h-full justify-between items-center relative z-30">
     <div
       class="relative z-0 w-[40%] h-[100%] flex items-center justify-center overflow-visible transition-all duration-500"
-      :class="{ 'panel-raise': panelRaised }"
-    >
+      :class="{ 'panel-raise': panelRaised }">
       <div class="fog-layer pointer-events-none" :class="{ 'fog-clear': fogOpened }"></div>
       <div
-        class="panel-surface w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur"
-      >
+        class="panel-surface w-full rounded-3xl border border-white/5 bg-[#050E16]/80 px-8 py-6 shadow-xl backdrop-blur">
         <h2 class="mb-4 text-3xl font-extrabold tracking-wide text-white">
           {{ displayCard.title }}
         </h2>
@@ -192,45 +190,26 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex flex-wrap gap-3">
-          <button
-            v-for="action in displayCard.actions"
-            :key="action"
-            class="rounded-full border border-[#29506A] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#9EC4E3] transition hover:bg-[#193144]"
-          >
+          <button v-for="action in displayCard.actions" :key="action"
+            class="rounded-full border border-[#29506A] px-5 py-2 text-xs font-semibold uppercase tracking-wide text-[#9EC4E3] transition hover:bg-[#193144]">
             {{ action }}
           </button>
         </div>
       </div>
     </div>
 
-    <div
-      ref="rightColRef"
-      class="relative z-20 w-[40%] h-full flex flex-col items-center justify-start gap-8"
-    >
+    <div ref="rightColRef" class="relative z-20 w-[40%] h-full flex flex-col items-center justify-start gap-8">
       <div class="pointer-events-none absolute inset-0">
         <svg v-if="lines.length" class="h-full w-full" fill="none">
-          <line
-            v-for="(line, idx) in lines"
-            :key="`line-${idx}`"
-            :x1="line.x1"
-            :y1="line.y1"
-            :x2="line.x2"
-            :y2="line.y2"
-            stroke-linecap="round"
+          <line v-for="(line, idx) in lines" :key="`line-${idx}`" :x1="line.x1" :y1="line.y1" :x2="line.x2"
+            :y2="line.y2" stroke-linecap="round"
             :stroke="highlightedIndex === idx ? '#9ad7f4' : 'rgba(109,152,177,0.45)'"
-            :stroke-width="highlightedIndex === idx ? 3 : 1.5"
-            class="transition-all duration-200"
-          />
+            :stroke-width="highlightedIndex === idx ? 3 : 1.5" class="transition-all duration-200" />
           <template v-for="(line, idx) in lines" :key="`beads-${idx}`">
-            <circle
-              v-for="step in beadSteps"
-              :key="`bead-${idx}-${step}`"
-              :cx="line.x1 + (line.x2 - line.x1) * step"
-              :cy="line.y1 + (line.y2 - line.y1) * step"
-              :r="highlightedIndex === idx ? 5 : 3.5"
+            <circle v-for="step in beadSteps" :key="`bead-${idx}-${step}`" :cx="line.x1 + (line.x2 - line.x1) * step"
+              :cy="line.y1 + (line.y2 - line.y1) * step" :r="highlightedIndex === idx ? 5 : 3.5"
               :fill="highlightedIndex === idx ? '#b9e6ff' : 'rgba(154,215,244,0.65)'"
-              class="transition-all duration-200 drop-shadow-sm"
-            />
+              class="transition-all duration-200 drop-shadow-sm" />
           </template>
         </svg>
       </div>
@@ -240,24 +219,16 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex flex-col items-start w-full max-w-[280px] gap-4">
-        <div
-          v-for="(value, idx) in items"
-          :key="value"
+        <div v-for="(value, idx) in items" :key="value"
           class="group grid cursor-pointer w-full grid-cols-[70px,auto] items-center gap-4"
-          @mouseenter="handleHover(value, idx)"
-          @mouseleave="handleLeave"
-          @click="handleSelect(value, idx)"
-        >
-          <div
-            :ref="(el) => registerItemRef(el as HTMLElement | null, idx)"
-            class="flex h-[70px] w-[70px] items-center justify-center transform transition-transform duration-200 group-hover:scale-110"
-          >
+          @mouseenter="handleHover(value, idx)" @mouseleave="handleLeave" @click="handleSelect(value, idx)">
+          <div :ref="(el) => registerItemRef(el as HTMLElement | null, idx)"
+            class="flex h-[70px] w-[70px] items-center justify-center transform transition-transform duration-200 group-hover:scale-110">
             <NeuronView :highlight="highlightedIndex === idx" />
           </div>
 
           <p
-            class="transform origin-left text-lg font-bold leading-tight text-[#23313b] transition-all duration-200 group-hover:scale-110 group-hover:text-[#284355]"
-          >
+            class="transform origin-left text-lg font-bold leading-tight text-[#23313b] transition-all duration-200 group-hover:scale-110 group-hover:text-[#284355]">
             {{ value }}
           </p>
         </div>
@@ -286,12 +257,20 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(0px);
 }
 
+.control_center {
+  position: relative;
+  z-index: 30;
+}
+
 .panel-surface {
   position: relative;
   overflow: hidden;
+  background: rgba(15, 24, 36, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
   box-shadow:
-    0 10px 30px rgba(5, 12, 20, 0.45),
-    inset 0 0 20px rgba(148, 204, 240, 0.15);
+    0 16px 46px rgba(6, 12, 22, 0.55),
+    inset 0 0 24px rgba(148, 204, 240, 0.18);
   transition:
     transform 450ms cubic-bezier(0.19, 1, 0.22, 1),
     box-shadow 450ms ease,
@@ -338,10 +317,10 @@ onBeforeUnmount(() => {
 .panel-raise .panel-surface {
   transform: translateY(-4px) scale(1.02);
   box-shadow:
-    0 14px 38px rgba(5, 12, 20, 0.6),
-    inset 0 0 26px rgba(148, 204, 240, 0.22);
-  border-color: rgba(124, 180, 220, 0.45);
-  background: rgba(5, 14, 22, 0.92);
+    0 18px 46px rgba(5, 12, 20, 0.68),
+    inset 0 0 28px rgba(148, 204, 240, 0.26);
+  border-color: rgba(124, 180, 220, 0.5);
+  background: rgba(10, 18, 30, 0.52);
 }
 
 @keyframes sweep {
@@ -349,13 +328,21 @@ onBeforeUnmount(() => {
     opacity: 0.9;
     transform: translateX(-40%) skewX(-12deg);
   }
+
   50% {
     opacity: 0.5;
     transform: translateX(10%) skewX(-4deg);
   }
+
   100% {
     opacity: 0;
     transform: translateX(60%) skewX(0deg);
   }
 }
 </style>
+
+
+
+
+
+

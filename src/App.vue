@@ -1,15 +1,15 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import DNABackground from './components/DNABackground.vue'
 
 import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <div class="relative min-h-screen text-white overflow-hidden w-full">
-    <!-- 3D фон: фиксирован на весь экран -->
-    <DNABackground class="fixed inset-0 z-10 pointer-events-none" />
+  <div class="relative z-20 min-h-screen text-white overflow-hidden w-full">
+    <!-- 3D С„РѕРЅ: С„РёРєСЃРёСЂРѕРІР°РЅ РЅР° РІРµСЃСЊ СЌРєСЂР°РЅ -->
+    <DNABackground class="fixed inset-0 -z-10 pointer-events-none" />
 
-    <!-- Контентный слой -->
+    <!-- РљРѕРЅС‚РµРЅС‚РЅС‹Р№ СЃР»РѕР№ -->
     <div
       class="relative min-h-screen flex flex-col
              pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
@@ -30,3 +30,4 @@ import { RouterView } from 'vue-router'
 
 <style scoped>
 </style>
+
