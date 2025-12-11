@@ -1,10 +1,9 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import * as THREE from 'three'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const hexes = Array.from({ length: 5 }, (_, i) => i + 1)
 let renderer: THREE.WebGLRenderer | null = null
 let scene: THREE.Scene | null = null
 let camera: THREE.PerspectiveCamera | null = null
@@ -15,18 +14,18 @@ let animationId = 0
 
 const clock = new THREE.Clock()
 
-// ==== Брейкпоинты ====
+// ==== '‘?çüóõ?ñ?‘'‘< ==== 
 const isDesktop = () => window.innerWidth >= 1024
 
-// ==== Инициализация ====
+// ==== ??ñ‘Åñø>ñúø‘Åñ‘? ====
 onMounted(() => {
   const canvas = canvasRef.value
   if (!canvas) return
 
-  // Сцена
+  // ö‘Åç?ø
   scene = new THREE.Scene()
 
-  // Камера
+  // ?ø?ç‘?ø
   camera = new THREE.PerspectiveCamera(
     45,
     window.innerWidth / window.innerHeight,
@@ -35,7 +34,7 @@ onMounted(() => {
   )
   camera.position.set(0, 0, 10)
 
-  // Рендерер
+  // ÿç??ç‘?ç‘?
   renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -45,14 +44,14 @@ onMounted(() => {
   renderer.setSize(window.innerWidth, window.innerHeight)
   renderer.setPixelRatio(window.devicePixelRatio)
 
-  // Свет
+  // ö?ç‘'
   scene.add(new THREE.AmbientLight(0xffffff, 0.9))
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.9)
   dirLight.position.set(1, 1.5, 3)
   scene.add(dirLight)
 
-  // ==== Шейдерный туман ====
+  // ==== ðçü?ç‘??‘<ü ‘'‘??ø? ====
   const vertexShader = `
     varying vec2 vUv;
     void main() {
@@ -132,7 +131,7 @@ onMounted(() => {
     },
   })
 
-  // Плоскость с туманом
+  // ?>?‘?ó?‘?‘'‘? ‘? ‘'‘??ø???
   const createFogPlane = () => {
     if (!camera || !scene) return
 
@@ -157,7 +156,7 @@ onMounted(() => {
 
   createFogPlane()
 
-  // ==== Загрузка ДНК (Только на десктопе!) ====
+  // ==== -ø?‘?‘?úóø "?? (÷?>‘?ó? ?ø ?ç‘?ó‘'?õç!) ====
   if (isDesktop()) {
     const loader = new OBJLoader()
     loader.load(
@@ -195,7 +194,7 @@ onMounted(() => {
     )
   }
 
-  // ===== Анимация =====
+  // ===== ??ñ?ø‘Åñ‘? =====
   const animate = () => {
     animationId = requestAnimationFrame(animate)
     const t = clock.getElapsedTime()
@@ -211,7 +210,7 @@ onMounted(() => {
 
   animate()
 
-  // ==== Ресайз ====
+  // ==== ÿç‘?øüú ====
   const handleResize = () => {
     renderer?.setSize(window.innerWidth, window.innerHeight)
 
@@ -230,7 +229,7 @@ onMounted(() => {
 
   window.addEventListener('resize', handleResize)
 
-  // ==== Очистка ====
+  // ==== ?‘Øñ‘?‘'óø ====
   onBeforeUnmount(() => {
     window.removeEventListener('resize', handleResize)
     cancelAnimationFrame(animationId)
@@ -239,44 +238,10 @@ onMounted(() => {
     renderer?.dispose()
   })
 })
-
-const hexStyle = (n: number, side: 'tl' | 'br') => {
-  const size = (120 + ((n % 4) * 8)) / 3
-  const baseRotate = side === 'tl' ? -6 : 8
-  const spin = (side === 'tl' ? -1 : 1) * (5 + (n % 3) * 2)
-  const offsetX = side === 'tl' ? 6 : 18
-  const offsetY = side === 'tl' ? 6 : 18
-  const x = (n * 18 + (side === 'tl' ? 4 : 10)) % 80 + offsetX
-  const y = (n * 21 + (side === 'tl' ? 7 : 12)) % 80 + offsetY
-  const duration = 20 + (n % 4) * 3
-  const delay = -n * 0.8
-  const dx = ((n % 2 === 0 ? 1 : -1) * (26 + (n % 4) * 9))
-  const dy = ((n % 3 === 0 ? -1 : 1) * (20 + (n % 4) * 8))
-
-  return {
-    '--hex-size': `${size}px`,
-    '--hex-rotate': `${baseRotate + n * 0.5}deg`,
-    '--hex-spin': `${spin}deg`,
-    '--hex-dur': `${duration}s`,
-    '--hex-delay': `${delay}s`,
-    '--x': `${x}%`,
-    '--y': `${y}%`,
-    '--dx': `${dx}px`,
-    '--dy': `${dy}px`,
-  } as Record<string, string>
-}
 </script>
 
 <template>
   <canvas ref="canvasRef" class="bg-canvas" />
-  <div class="hex-group hex-group--tl" aria-hidden="true">
-    <img v-for="n in hexes" :key="`tl-${n}`" class="hex-img" src="/hexagon_icon_125735.svg" alt=""
-      :style="hexStyle(n, 'tl')" />
-  </div>
-  <div class="hex-group hex-group--br" aria-hidden="true">
-    <img v-for="n in hexes" :key="`br-${n}`" class="hex-img" src="/hexagon_icon_125735.svg" alt=""
-      :style="hexStyle(n, 'br')" />
-  </div>
 </template>
 
 <style scoped>
@@ -287,57 +252,5 @@ const hexStyle = (n: number, side: 'tl' | 'br') => {
   height: 100%;
   z-index: 10;
   pointer-events: none;
-}
-
-.hex-group {
-  position: fixed;
-  width: 42vw;
-  height: 42vh;
-  pointer-events: none;
-  z-index: 11;
-  overflow: visible;
-}
-
-.hex-group--tl {
-  top: 0;
-  left: 0;
-}
-
-.hex-group--br {
-  right: 0;
-  bottom: 0;
-}
-
-.hex-img {
-  --hex-size: 40px;
-  --hex-rotate: 0deg;
-  --hex-spin: 6deg;
-  --hex-dur: 20s;
-  --hex-delay: 0s;
-  --x: 0%;
-  --y: 0%;
-  --dx: 0px;
-  --dy: 0px;
-  position: absolute;
-  top: var(--y);
-  left: var(--x);
-  width: var(--hex-size);
-  height: var(--hex-size);
-  transform: translate(-50%, -50%) rotate(var(--hex-rotate));
-  opacity: 0.05;
-  mix-blend-mode: screen;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
-  animation: floatSpin var(--hex-dur) ease-in-out infinite alternate;
-  animation-delay: var(--hex-delay);
-}
-
-@keyframes floatSpin {
-  0% {
-    transform: translate(-50%, -50%) rotate(var(--hex-rotate));
-  }
-
-  100% {
-    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(calc(var(--hex-rotate) + var(--hex-spin)));
-  }
 }
 </style>
