@@ -5,23 +5,25 @@ import { useRouter } from "vue-router";
 import ControlCenterCard from "../components/ControlCenterCard.vue";
 import NeuronView from "../components/NeuronView.vue";
 
-// ★ если картинка лежит в public/screen/analytics.jpeg
-//   то правильный путь — "/screen/analytics.jpeg"
+// если картинка лежит в public/screen/analytics.jpeg
 const analyticsPreviewImg = `${import.meta.env.BASE_URL}screen/analytics.jpeg`;
 
 const items = ["Аналитика", "Пайплайны", "Память", "Симуляции", "Политики", "Сенсоры"];
 const routePaths = ["/analytics", "/pipelines", "/memory", "/simulations", "/policies", "/sensors"];
 const router = useRouter();
 
-const activeItem = ref(items[0]); // текущее выбранное значение (клик)
-const displayItem = ref(""); // показываемое значение (только для аналитики)
+const activeItem = ref(items[0]);
+const displayItem = ref("");
 const activeIndex = computed(() => items.indexOf(activeItem.value));
+
 const hoveredIndex = ref<number | null>(null);
-const panelRaised = ref(false); // поднимаем панель при клике
+const panelRaised = ref(false);
 const fogOpened = ref(false);
+
 const highlightedIndex = computed(() =>
   hoveredIndex.value !== null ? hoveredIndex.value : activeIndex.value
 );
+
 const hoverTimer = ref<number | null>(null);
 
 const rightColRef = ref<HTMLElement | null>(null);
@@ -30,26 +32,22 @@ const itemRefs = ref<(HTMLElement | null)[]>([]);
 const lines = ref<{ x1: number; y1: number; x2: number; y2: number }[]>([]);
 const beadSteps = [0.25, 0.5, 0.75];
 
-// ★ новое: явно считаем, наведен ли сейчас пункт "Аналитика"
+
+// наведен ли сейчас пункт "Аналитика"
 const isAnalyticsHovered = computed(
   () => hoveredIndex.value !== null && items[hoveredIndex.value] === "Аналитика"
 );
 
-// ★ новое: активна ли сейчас "Аналитика" (по клику)
-
-// ★ новое: показывать превью, если либо навели на "Аналитика",
-//   либо уже выбрали "Аналитика" (активная вкладка)
+// превью аналитики работает ТОЛЬКО от hover
 const showAnalyticsPreview = computed(() => isAnalyticsHovered.value);
 
 const registerItemRef = (el: HTMLElement | null, idx: number) => {
   itemRefs.value[idx] = el;
 };
 
-// ★ если превью показывается — очищаем туман
+// если превью показывается — очищаем туман; как только нет превью — возвращаем туман
 watch(showAnalyticsPreview, (val) => {
-  if (val) {
-    fogOpened.value = true; // "очистить" туман для видимости превью
-  }
+  fogOpened.value = val;
 });
 
 const handleHover = (value: string, idx: number) => {
@@ -57,14 +55,12 @@ const handleHover = (value: string, idx: number) => {
     clearTimeout(hoverTimer.value);
     hoverTimer.value = null;
   }
+
   hoveredIndex.value = idx;
   panelRaised.value = false;
   fogOpened.value = false;
 
-  // небольшая задержка перед показом карточки
   hoverTimer.value = window.setTimeout(() => {
-    // ★ displayItem теперь не критичен для hover-превью,
-    //   но оставляем твою логику, чтобы ничего не сломать
     displayItem.value = value === "Аналитика" ? value : "";
     hoverTimer.value = null;
     nextTick(updateLines);
@@ -76,11 +72,13 @@ const handleSelect = (value: string, idx: number) => {
     clearTimeout(hoverTimer.value);
     hoverTimer.value = null;
   }
+
   activeItem.value = value;
   hoveredIndex.value = null;
   displayItem.value = value === "Аналитика" ? value : "";
   panelRaised.value = true; // поднимаем панель
-  fogOpened.value = true; // убираем туман
+  // туман кликом не трогаем
+
   const targetPath = routePaths[idx];
   if (targetPath) {
     void router.push(targetPath);
@@ -93,9 +91,13 @@ const handleLeave = () => {
     clearTimeout(hoverTimer.value);
     hoverTimer.value = null;
   }
+
   hoveredIndex.value = null;
   displayItem.value = activeItem.value === "Аналитика" ? activeItem.value : "";
-  fogOpened.value = panelRaised.value;
+
+  // как только курсор ушёл — туман всегда возвращаем
+  fogOpened.value = false;
+
   nextTick(updateLines);
 };
 
@@ -138,10 +140,12 @@ onBeforeUnmount(() => {
     <div
       class="relative z-20 w-[40%] h-[100%] min-h-[360px] flex items-center justify-center overflow-visible transition-all duration-500"
       :class="{ 'panel-raise': panelRaised }">
-      <!-- ★ превью аналитики показывается и при hover, и при активной вкладке -->
-      <div v-if="showAnalyticsPreview" class="analytics-preview z-20">
-        <img :src="analyticsPreviewImg" alt="Предпросмотр аналитики" class="preview-image" />
-      </div>
+      <!-- превью аналитики только при hover + анимация выезда слева -->
+      <Transition name="analytics-slide">
+        <div v-if="showAnalyticsPreview" class="analytics-preview z-20">
+          <img :src="analyticsPreviewImg" alt="Предпросмотр аналитики" class="preview-image" />
+        </div>
+      </Transition>
 
       <div class="fog-layer pointer-events-none z-10" :class="{ 'fog-clear': fogOpened }"></div>
     </div>
@@ -194,14 +198,12 @@ onBeforeUnmount(() => {
 .fog-layer {
   position: absolute;
   inset: 0;
-
   opacity: 1;
   transition: opacity 500ms ease, backdrop-filter 500ms ease;
 }
 
 .fog-clear {
   opacity: 0;
-
 }
 
 .control_center {
@@ -216,8 +218,24 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: flex-start;
   padding: 24px;
+}
+
+/* Анимация выезда изображения слева */
+.analytics-slide-enter-from,
+.analytics-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-40px);
+}
+
+.analytics-slide-enter-to,
+.analytics-slide-leave-from {
   opacity: 1;
-  transition: opacity 250ms ease;
+  transform: translateX(0);
+}
+
+.analytics-slide-enter-active,
+.analytics-slide-leave-active {
+  transition: opacity 250ms ease, transform 250ms ease;
 }
 
 .preview-image {
@@ -225,15 +243,16 @@ onBeforeUnmount(() => {
   max-height: 200%;
   object-fit: contain;
   border-radius: 12px;
-
-
+  opacity: 0.25;
+  border-radius: 40px;
 }
 
 .panel-surface::after {
   content: "";
   position: absolute;
   inset: -20% -10%;
-  background: radial-gradient(circle at 30% 30%, rgba(140, 207, 255, 0.18), transparent 45%),
+  background:
+    radial-gradient(circle at 30% 30%, rgba(140, 207, 255, 0.18), transparent 45%),
     radial-gradient(circle at 70% 10%, rgba(70, 140, 200, 0.2), transparent 50%),
     linear-gradient(120deg, rgba(138, 199, 236, 0.08), rgba(34, 65, 98, 0));
   opacity: 0;
@@ -246,7 +265,9 @@ onBeforeUnmount(() => {
   content: "";
   position: absolute;
   inset: -30% -30%;
-  background: linear-gradient(115deg, rgba(180, 240, 255, 0.25), rgba(100, 180, 230, 0) 40%);
+  background: linear-gradient(115deg,
+      rgba(180, 240, 255, 0.25),
+      rgba(100, 180, 230, 0) 40%);
   opacity: 0;
   transform: translateX(-30%) skewX(-10deg);
   filter: blur(18px);
