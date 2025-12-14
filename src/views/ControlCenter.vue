@@ -31,6 +31,8 @@ const cardRef = ref<HTMLElement | null>(null);
 const itemRefs = ref<(HTMLElement | null)[]>([]);
 const lines = ref<{ x1: number; y1: number; x2: number; y2: number }[]>([]);
 const beadSteps = [0.25, 0.5, 0.75];
+const layoutScale = ref(1);
+const baseHeight = 760;
 
 
 // наведен ли сейчас пункт "Аналитика"
@@ -101,16 +103,25 @@ const handleLeave = () => {
   nextTick(updateLines);
 };
 
+const updateScale = () => {
+  const available = window.innerHeight - 40; // небольшой запас
+  const ratio = available / baseHeight;
+  layoutScale.value = Math.min(1, Math.max(0.7, ratio));
+};
+
+watch(layoutScale, () => nextTick(updateLines));
+
 const updateLines = () => {
   const colEl = rightColRef.value;
   const cardEl = cardRef.value;
   if (!colEl || !cardEl) return;
 
+  const scale = layoutScale.value || 1;
   const colRect = colEl.getBoundingClientRect();
   const cardRect = cardEl.getBoundingClientRect();
   const cardCenter = {
-    x: cardRect.left + cardRect.width / 2 - colRect.left,
-    y: cardRect.top + cardRect.height / 2 - colRect.top,
+    x: (cardRect.left - colRect.left + cardRect.width / 2) / scale,
+    y: (cardRect.top - colRect.top + cardRect.height / 2) / scale,
   };
 
   lines.value = itemRefs.value.map((el) => {
@@ -119,26 +130,29 @@ const updateLines = () => {
     return {
       x1: cardCenter.x,
       y1: cardCenter.y,
-      x2: rect.left + rect.width / 2 - colRect.left,
-      y2: rect.top + rect.height / 2 - colRect.top,
+      x2: (rect.left - colRect.left + rect.width / 2) / scale,
+      y2: (rect.top - colRect.top + rect.height / 2) / scale,
     };
   });
 };
 
 onMounted(() => {
   nextTick(updateLines);
+  updateScale();
   window.addEventListener("resize", updateLines);
+  window.addEventListener("resize", updateScale);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", updateLines);
+  window.removeEventListener("resize", updateScale);
 });
 </script>
 
 <template>
-  <div class="control_center flex h-full justify-between items-center relative z-30">
+  <div class="control_center flex h-full min-h-screen justify-between items-start relative z-30 px-4 py-4">
     <div
-      class="relative z-20 w-[40%] h-[100%] min-h-[360px] flex items-center justify-center overflow-visible transition-all duration-500"
+      class="relative z-20 self-center w-[38%] h-[100%] min-h-[320px] flex items-center justify-center overflow-visible transition-all duration-500"
       :class="{ 'panel-raise': panelRaised }">
       <!-- превью аналитики только при hover + анимация выезда слева -->
       <Transition name="analytics-slide">
@@ -150,7 +164,8 @@ onBeforeUnmount(() => {
       <div class="fog-layer pointer-events-none z-10" :class="{ 'fog-clear': fogOpened }"></div>
     </div>
 
-    <div ref="rightColRef" class="relative z-20 w-[40%] h-full flex flex-col items-center justify-start gap-8">
+    <div ref="rightColRef" class="relative z-20 w-[38%] h-full flex flex-col items-center justify-start gap-5"
+      :style="{ transform: `scale(${layoutScale})`, transformOrigin: 'top center' }">
       <div class="pointer-events-none absolute inset-0">
         <svg v-if="lines.length" class="h-full w-full" fill="none">
           <line v-for="(line, idx) in lines" :key="`line-${idx}`" :x1="line.x1" :y1="line.y1" :x2="line.x2"
@@ -166,21 +181,21 @@ onBeforeUnmount(() => {
         </svg>
       </div>
 
-      <div ref="cardRef" class="w-full max-w-[280px] flex justify-center">
+      <div ref="cardRef" class="w-full max-w-[260px] flex justify-center">
         <ControlCenterCard />
       </div>
 
-      <div class="flex flex-col items-start w-full max-w-[280px] gap-4">
+      <div class="flex flex-col items-start w-full max-w-[260px] gap-2.5">
         <div v-for="(value, idx) in items" :key="value"
-          class="group grid cursor-pointer w-full grid-cols-[70px,auto] items-center gap-4"
+          class="group grid cursor-pointer w-full grid-cols-[60px,auto] items-center gap-2.5"
           @mouseenter="handleHover(value, idx)" @mouseleave="handleLeave" @click="handleSelect(value, idx)">
           <div :ref="(el) => registerItemRef(el as HTMLElement | null, idx)"
-            class="flex h-[70px] w-[70px] items-center justify-center transform transition-transform duration-200 group-hover:scale-110">
+            class="flex h-[60px] w-[60px] items-center justify-center transform transition-transform duration-200 group-hover:scale-110">
             <NeuronView :highlight="highlightedIndex === idx" />
           </div>
 
           <p
-            class="transform origin-left text-lg font-bold leading-tight text-[#23313b] transition-all duration-200 group-hover:scale-110 group-hover:text-[#284355]">
+            class="transform origin-left text-base font-bold leading-tight text-[#23313b] transition-all duration-200 group-hover:scale-110 group-hover:text-[#284355]">
             {{ value }}
           </p>
         </div>
@@ -239,11 +254,11 @@ onBeforeUnmount(() => {
 }
 
 .preview-image {
-  max-width: 200%;
-  max-height: 200%;
+  max-width: 180%;
+  max-height: 180%;
   object-fit: contain;
   border-radius: 12px;
-  opacity: 0.25;
+  opacity: 0.5;
   border-radius: 40px;
 }
 
