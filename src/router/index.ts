@@ -62,9 +62,13 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/:pathMatch(.*)*',
+      path: '/404',
       name: 'not-found',
       component: NotFound,
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/404',
     },
   ],
 })
@@ -74,6 +78,10 @@ router.beforeEach((to, from, next) => {
 
   if (to.name === 'authregister' && auth.isAuthenticated) {
     return next({ name: 'home' })
+  }
+
+  if (to.name === 'not-found') {
+    return next()
   }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
