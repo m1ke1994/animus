@@ -1,4 +1,5 @@
-﻿import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 import LoginRegister from '@/views/Auth/LoginRegister.vue'
 import ControlCenter from '@/views/ControlCenter.vue'
@@ -8,6 +9,7 @@ import Memory from '@/views/Memory.vue'
 import Simulations from '@/views/Simulations.vue'
 import Policies from '@/views/Policies.vue'
 import Sensors from '@/views/Sensors.vue'
+import NotFound from '@/views/NotFound.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,44 +17,70 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: ControlCenter
+      component: ControlCenter,
+      meta: { requiresAuth: true },
     },
     {
-      path: '/auth',
-      name: 'auth',
-      component: LoginRegister
+      path: '/authregister',
+      name: 'authregister',
+      component: LoginRegister,
     },
     {
       path: '/analytics',
       name: 'analytics',
-      component: Analytics
+      component: Analytics,
+      meta: { requiresAuth: true },
     },
     {
       path: '/pipelines',
       name: 'pipelines',
-      component: Pipelines
+      component: Pipelines,
+      meta: { requiresAuth: true },
     },
     {
       path: '/memory',
       name: 'memory',
-      component: Memory
+      component: Memory,
+      meta: { requiresAuth: true },
     },
     {
       path: '/simulations',
       name: 'simulations',
-      component: Simulations
+      component: Simulations,
+      meta: { requiresAuth: true },
     },
     {
       path: '/policies',
       name: 'policies',
-      component: Policies
+      component: Policies,
+      meta: { requiresAuth: true },
     },
     {
       path: '/sensors',
       name: 'sensors',
-      component: Sensors
-    }
-  ]
+      component: Sensors,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFound,
+    },
+  ],
+})
+
+router.beforeEach((to, from, next) => {
+  const auth = useAuthStore()
+
+  if (to.name === 'authregister' && auth.isAuthenticated) {
+    return next({ name: 'home' })
+  }
+
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    return next({ name: 'authregister', query: { redirect: to.fullPath } })
+  }
+
+  return next()
 })
 
 export default router

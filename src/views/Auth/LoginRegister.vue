@@ -1,47 +1,40 @@
 <template>
   <div class="page">
     <div class="content">
-      <!-- Центр — логотип + бренд -->
       <header class="brand-block">
         <AnimusLogo :width="88" :height="88" :animate="true" />
 
         <div class="brand-text">
           <h1 class="text-white font-bold">Animus</h1>
           <p class="subtitle text-slate-900 font-bold">
-            Управление пайплайнами данных под полным контролем
+            Контрольная панель синхронизации: тонкое управление потоками данных.
           </p>
         </div>
       </header>
 
-      <!-- Стеклянная карточка авторизации/регистрации -->
       <main class="glass-card">
-        <!-- Переключатель вкладок -->
         <div class="tabs">
           <button
             type="button"
             class="tab-btn"
             :class="{ active: mode === 'login' }"
-            @click="mode = 'login'"
-          >
-            ВОЙТИ
+            @click="mode = 'login'">
+            Вход
           </button>
           <button
             type="button"
             class="tab-btn"
             :class="{ active: mode === 'register' }"
-            @click="mode = 'register'"
-          >
-            РЕГИСТРАЦИЯ
+            @click="mode = 'register'">
+            Регистрация
           </button>
         </div>
 
-        <!-- Содержимое -->
         <transition name="fade-slide" mode="out-in">
           <section :key="mode" class="form-section">
-            <!-- LOGIN -->
             <form v-if="mode === 'login'" @submit.prevent="onLogin">
               <p class="form-caption text-slate-900 text-center font-bold">
-                Вернитесь к управлению пайплайнами
+                Введите email и пароль, чтобы открыть дашборд.
               </p>
 
               <label for="login-email" class="text-slate-600 font-bold">EMAIL *</label>
@@ -49,79 +42,72 @@
                 id="login-email"
                 type="email"
                 v-model="loginForm.email"
-                placeholder="name@example.com"
-              />
+                placeholder="name@example.com" />
 
-              <label for="login-password" class="text-slate-600 font-bold">ПАРОЛЬ *</label>
+              <label for="login-password" class="text-slate-600 font-bold">Пароль *</label>
               <input
                 id="login-password"
                 type="password"
                 v-model="loginForm.password"
-                placeholder="Ваш пароль"
-              />
+                placeholder="••••••••" />
 
               <button type="submit" class="primary-btn">
-                ВОЙТИ
+                Войти
               </button>
+
+              <p v-if="authError" class="error-text">{{ authError }}</p>
 
               <button
                 type="button"
                 class="link-btn text-slate-600 font-bold"
-                @click="mode = 'register'"
-              >
-                Нужен аккаунт? Зарегистрируйтесь
+                @click="mode = 'register'">
+                Нет аккаунта? Зарегистрируйтесь
               </button>
             </form>
 
-            <!-- REGISTER -->
             <form v-else @submit.prevent="onRegister">
               <p class="form-caption text-slate-900 text-center font-bold">
-                Создайте рабочее место для своих данных
+                Создайте учётную запись и сразу переходите к панели.
               </p>
 
-              <!-- EMAIL -->
               <label for="reg-email" class="text-slate-600 font-bold">EMAIL *</label>
               <input
                 id="reg-email"
                 type="email"
                 v-model="registerForm.email"
-                placeholder="name@example.com"
-              />
+                placeholder="name@example.com" />
 
-              <!-- ИМЯ -->
               <div class="field-label">
-                <label for="reg-name" class="text-slate-600 font-bold">ИМЯ</label>
-                <span class="field-helper text-slate-600 font-bold">НЕОБЯЗАТЕЛЬНО</span>
+                <label for="reg-name" class="text-slate-600 font-bold">Имя</label>
+                <span class="field-helper text-slate-600 font-bold">Опционально</span>
               </div>
               <input
                 id="reg-name"
                 type="text"
                 v-model="registerForm.name"
-                placeholder="Мария Дата-Операторщица"
-              />
+                placeholder="Как к вам обращаться" />
 
-              <!-- ПАРОЛЬ -->
               <div class="field-label">
-                <label for="reg-password" class="text-slate-600 font-bold">ПАРОЛЬ *</label>
-                <span class="field-helper text-slate-600 font-bold">МИНИМУМ 8 СИМВОЛОВ</span>
+                <label for="reg-password" class="text-slate-600 font-bold">Пароль *</label>
+                <span class="field-helper text-slate-600 font-bold">Мин. 8 символов</span>
               </div>
               <input
                 id="reg-password"
                 type="password"
                 v-model="registerForm.password"
-                placeholder="Придумайте надёжный пароль"
-              />
+                placeholder="••••••••" />
 
               <button type="submit" class="primary-btn ">
-                СОЗДАТЬ АККАУНТ
+                Зарегистрироваться
               </button>
+
+              <p v-if="authError" class="error-text">{{ authError }}</p>
 
               <button
                 type="button"
                 class="link-btn text-slate-600 font-bold"
-                @click="mode = 'login'"
-              >
-                Уже есть аккаунт? Войти
+                @click="mode = 'login'">
+                Уже есть вход? Перейти к авторизации
               </button>
             </form>
           </section>
@@ -131,47 +117,77 @@
   </div>
 </template>
 
-<script setup>
-import { reactive, ref } from "vue";
-import AnimusLogo from "@/components/AnimusLogo.vue";
+<script setup lang="ts">
+import { reactive, ref, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
+import AnimusLogo from "@/components/AnimusLogo.vue"
+import { useAuthStore } from "@/stores/auth"
 
-const mode = ref("login"); // 'login' | 'register'
-
+const mode = ref<"login" | "register">("login")
 const loginForm = reactive({
   email: "",
   password: "",
-});
-
+})
 const registerForm = reactive({
   email: "",
   name: "",
   password: "",
-});
+})
+
+const authError = ref("")
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+
+const redirectAfterAuth = () => {
+  const redirect = (route.query.redirect as string) || "/"
+  void router.push(redirect)
+}
 
 const onLogin = () => {
-  console.log("login:", { ...loginForm });
-  // TODO: вызвать API авторизации
-};
+  authError.value = ""
+  if (!loginForm.email || !loginForm.password) {
+    authError.value = "Введите email и пароль"
+    return
+  }
+
+  const ok = authStore.login(loginForm.email, loginForm.password)
+  if (ok) {
+    redirectAfterAuth()
+  } else {
+    authError.value = "Неверный email или пароль"
+  }
+}
 
 const onRegister = () => {
-  console.log("register:", { ...registerForm });
-  // TODO: вызвать API регистрации
-};
+  authError.value = ""
+  if (!registerForm.email || !registerForm.password) {
+    authError.value = "Заполните email и пароль"
+    return
+  }
+
+  authStore.register(registerForm.email, registerForm.name, registerForm.password)
+  redirectAfterAuth()
+}
+
+watch(mode, () => {
+  authError.value = ""
+})
 </script>
 
 <style scoped>
 .page {
   margin: 0;
-  padding: 24px 16px;
+  padding: 8px 12px 24px;
   min-height: 100vh;
   box-sizing: border-box;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #e5e7eb;
   background: transparent;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow-y: auto;
 }
 
 .content {
@@ -179,15 +195,15 @@ const onRegister = () => {
   max-width: 460px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
+  padding-top: 0;
 }
 
-/* блок с логотипом по центру */
 .brand-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   text-align: center;
 }
 
@@ -203,28 +219,24 @@ const onRegister = () => {
   font-size: 16px;
 }
 
-/* стеклянная карточка */
 .glass-card {
   position: relative;
-  padding: 18px 18px 20px;
-  border-radius: 22px;
+  padding: 12px 12px 16px;
+  border-radius: 18px;
   box-sizing: border-box;
   border: 1px solid rgba(148, 163, 184, 0.55);
   -webkit-backdrop-filter: blur(26px);
   backdrop-filter: blur(26px);
-  box-shadow:
-    0 22px 60px rgba(15, 23, 42, 0.9),
-    0 0 0 1px rgba(30, 64, 175, 0.2);
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.9), 0 0 0 1px rgba(30, 64, 175, 0.2);
 }
 
-/* tabs */
 .tabs {
   display: flex;
   padding: 4px;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(31, 41, 55, 0.9);
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .tab-btn {
@@ -247,40 +259,37 @@ const onRegister = () => {
   box-shadow: 0 0 18px rgba(37, 99, 235, 0.6);
 }
 
-/* форма внутри стекла */
 .form-section {
   padding-top: 4px;
 }
 
 .form-caption {
-  margin: 0 0 12px;
-  font-size: 14px;
+  margin: 0 0 8px;
+  font-size: 13px;
   text-align: center;
 }
 
-/* подписи полей */
 label {
   font-size: 11px;
   display: block;
   letter-spacing: 0.08em;
-  color: rgb(15 23 42); /* slate-900 */
+  color: rgb(15 23 42);
 }
 
 .field-label {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .field-helper {
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgb(15 23 42 / 0.7); /* slate-900 but lighter */
+  color: rgb(15 23 42 / 0.7);
 }
 
-/* инпуты */
 input {
   width: 100%;
   padding: 11px 14px;
@@ -289,23 +298,20 @@ input {
   border-radius: 10px;
   color: #f9fafb;
   margin-top: 4px;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   outline: none;
   font-size: 14px;
 }
 
 input::placeholder {
-  color:#1C2638;
+  color: #1c2638;
 }
 
 input:focus {
   border-color: #2563eb;
-  box-shadow:
-    0 0 0 1px rgba(37, 99, 235, 0.7),
-    0 0 30px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.7), 0 0 30px rgba(37, 99, 235, 0.35);
 }
 
-/* основная кнопка */
 .primary-btn {
   width: 100%;
   padding: 10px 14px;
@@ -324,7 +330,6 @@ input:focus {
 .primary-btn:hover {
   opacity: 0.96;
   transform: translateY(-3px);
- 
 }
 
 .primary-btn:active {
@@ -332,10 +337,9 @@ input:focus {
   box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
 }
 
-/* вторичная текстовая кнопка */
 .link-btn {
   width: 100%;
-  margin-top: 14px;
+  margin-top: 10px;
   padding: 6px 4px;
   border: none;
   background: transparent;
@@ -350,7 +354,13 @@ input:focus {
   transition: all 0.3s ease;
 }
 
-/* анимация переключения форм */
+.error-text {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #e11d48;
+}
+
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.18s ease;
@@ -366,21 +376,22 @@ input:focus {
   transform: translateY(-4px);
 }
 
-/* десктопные подправки */
 @media (min-width: 768px) {
   .page {
-    padding: 32px 24px;
+    padding: 14px 20px 36px;
     background: transparent;
+    align-items: center;
   }
 
   .content {
     max-width: 480px;
-    gap: 24px;
+    gap: 12px;
+    padding-top: 0;
   }
 
   .glass-card {
-    padding: 22px 24px 26px;
-    border-radius: 24px;
+    padding: 14px 16px 18px;
+    border-radius: 20px;
   }
 
   .brand-text h1 {
