@@ -15,44 +15,44 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: ControlCenter,
+      component: ControlCenter
     },
     {
-      path: '/authregister',
-      name: 'authregister',
-      component: LoginRegister,
+      path: '/auth',
+      name: 'auth',
+      component: LoginRegister
     },
     {
       path: '/analytics',
       name: 'analytics',
-      component: Analytics,
+      component: Analytics
     },
     {
       path: '/pipelines',
       name: 'pipelines',
-      component: Pipelines,
+      component: Pipelines
     },
     {
       path: '/memory',
       name: 'memory',
-      component: Memory,
+      component: Memory
     },
     {
       path: '/simulations',
       name: 'simulations',
-      component: Simulations,
+      component: Simulations
     },
     {
       path: '/policies',
       name: 'policies',
-      component: Policies,
+      component: Policies
     },
     {
       path: '/sensors',
       name: 'sensors',
-      component: Sensors,
-    },
-  ],
+      component: Sensors
+    }
+  ]
 })
 
 export default router
